@@ -17,6 +17,9 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
@@ -32,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Path("/API")
 @ApplicationScoped
-public class Endpoints {
+public class Endpoints implements HealthCheck {
 
     private static final Logger LOGGER = Logger.getLogger(Endpoints.class.getName());
 
@@ -54,7 +57,8 @@ public class Endpoints {
                                 .add("content",
                                         """
                                                 Olá! 👋 Bem-vindo ao bot de whatsapp da cadeira de Programação para web 2! (mensagens automáticas)
-                                                📩 Para receber aviso regularmente na comunidade, adicione o contato enviado aos seus contatos e responda com a palavra "avisos".
+                                                📩 Para receber aviso regularmente na comunidade, adicione esse contato caso ainda não esteja adicionado e responda com a palavra "avisos".
+                                                📚 Para ver o resultado do health check desse serviço, responda com a palavra "health".
                                                 """)
                                 .build())
                 .build().toString();
@@ -79,10 +83,7 @@ public class Endpoints {
                 .add("args",
                         Json.createObjectBuilder()
                                 .add("to", recipient)
-                                .add("content",
-                                        """
-                                                ✅ Identificamos que você já está inscrito em uma comunidade.
-                                                """)
+                                .add("content", "✅ Identificamos que você já está inscrito em uma comunidade.")
                                 .build())
                 .build().toString();
     }
@@ -92,10 +93,19 @@ public class Endpoints {
                 .add("args",
                         Json.createObjectBuilder()
                                 .add("to", recipient)
-                                .add("content",
-                                        """
-                                                Verifique se você adicionou esse número aos seus contatos e tente novamente.
-                                                """)
+                                .add("content", "Verifique se você adicionou esse número aos seus contatos e tente novamente.")
+                                .build())
+                .build().toString();
+    }
+
+    private static String healtCheck(String recipient, boolean isUp) {
+        String obs = "OBS.: Embora possa ser usado, o Health checks não se destina como uma solução de monitoramento de serviços para operadores humanos";
+        String statusMessage = isUp ? "Status do serviço é up. ".concat(obs) : "Status do serviço é down".concat(obs);
+        return Json.createObjectBuilder()
+                .add("args",
+                        Json.createObjectBuilder()
+                                .add("to", recipient)
+                                .add("content", statusMessage)
                                 .build())
                 .build().toString();
     }
@@ -222,7 +232,18 @@ public class Endpoints {
                 if ("555186559754@c.us".equals(to) && from.contains("@c.us")) {
                     String name = data.get("chat").get("contact").get("pushname").asText();
                     LOGGER.info("Message: " + messageBody + ", from: " + from + ", name: " + name);
-                    if ("ofertas".equalsIgnoreCase(messageBody)) {
+                    if ("pw2".equalsIgnoreCase(messageBody)) {
+                        LOGGER.info("Sending initial menu to: " + from);
+                        waAutomateNodejs.sendText(initialMenu(from));
+                        return Response.status(200).build();
+                    } else if ("health".equalsIgnoreCase(messageBody)) {
+                        LOGGER.info("Sending health check to: " + from);
+                        if (call().getStatus().equals(HealthCheckResponse.Status.UP))
+                            waAutomateNodejs.sendText(healtCheck(from, true));
+                        else
+                            waAutomateNodejs.sendText(healtCheck(from, false));
+                        return Response.status(200).build();
+                    } else if ("avisos".equalsIgnoreCase(messageBody)) {
                         contactEntityResource.create(from, name);
                         var resultAddParticipant = contactEntityResource.addParticipant(from);
                         Thread.sleep(4000);
@@ -234,10 +255,6 @@ public class Endpoints {
                         } else if (resultAddParticipant.getStatus() == 200)
                             waAutomateNodejs.sendText(alreadySubscribedToCommunity(from));
                         return resultAddParticipant;
-                    } else {
-                        LOGGER.info("Sending initial menu to: " + from);
-                        waAutomateNodejs.sendText(initialMenu(from));
-                        return Response.status(200).entity("Message different than 'ofertas'").build();
                     }
                 }
             }
@@ -249,7 +266,7 @@ public class Endpoints {
     }
 
     // esse endpoint itera sobre todas as comunidades e, para cada uma delas, chama o metodo contactEntityResource.removeParticipant
-    // que por sua vez, atualiza o campo numberOfContacts para cada comunidade, alem de atualizar os campos communityEntity e authorizedToSendMessages
+    // que por sua vez, atualiza o campo numberOfContacts para cada comunidade, alem de atualizar o campo communityEntity
     // para os contatos que sairam das comunidades. Isso eh necessario pois nao encontrei uma forma de capturar o evento de saida de um participante das comunidades
     // ha uma rotina configurada na cron para executar esse metodo a cada hora
     // 0       *       *       *       *       /usr/bin/curl -X POST http://localhost:8080/API/checkCommunityParticipants
@@ -257,7 +274,6 @@ public class Endpoints {
     @Path("/checkCommunityParticipants")
     @Transactional
     public void checkCommunityParticipants() {
-        LOGGER.info("Starting checkCommunityParticipants method");
         List<CommunityEntity> communityEntities = CommunityEntity.listAll();
         communityEntities.forEach(community -> {
             try {
@@ -267,7 +283,6 @@ public class Endpoints {
                 throw new RuntimeException(e);
             }
         });
-        LOGGER.info("Completed checkCommunityParticipants method");
     }
 
     @Path("/sendImage")
@@ -291,6 +306,23 @@ public class Endpoints {
                                 .build())
                 .build().toString();
         return waAutomateNodejs.sendImage(jsonBody);
+    }
+
+    @Override
+    @GET
+    @Path("/health")
+    public HealthCheckResponse call() {
+        HealthCheckResponseBuilder response = HealthCheckResponse.named(Endpoints.class.getName());
+        try {
+            String chatIds = waAutomateNodejs.getAllChatIds();
+            if (!chatIds.isEmpty())
+                response.up().withData("Whatsapp API service", "up");
+            else
+                response.down().withData("Whatsapp API service", "no chat ids returned");
+        } catch (Exception e) {
+            response.down().withData("Whatsapp API service", "error: " + e.getMessage());
+        }
+        return response.build();
     }
 
 }

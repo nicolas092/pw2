@@ -89,7 +89,6 @@ public class ContactEntityResource {
 
             contact.communityEntity = CommunityEntity.find("receivingNewContacts = ?1 and category = ?2", true, Category.ALUNOS).firstResult();
             waAutomateNodejs.addParticipant(createJson(contact));
-            contact.authorizedToSendMessages = true;
             contact.persist();
 
             return Response.status(201).entity(contact).build();
@@ -117,7 +116,6 @@ public class ContactEntityResource {
             if (!communityParticipantsCorrect.contains(contact.number)) {
                 LOGGER.info("Removing participant: " + contact.number + " " + contact.name);
                 contact.communityEntity = null;
-                contact.authorizedToSendMessages = false;
                 contact.persist();
             }
         });
@@ -135,7 +133,6 @@ public class ContactEntityResource {
             ContactEntity contact = ContactEntity.findByNumber(clientNumber);
             if (contact != null) {
                 contact.communityEntity = null;
-                contact.authorizedToSendMessages = false;
                 contact.persist();
             }
             LOGGER.info("checkIfParticipantWasAdded() - " + clientNumber + " was NOT added to community number: " + communityNumber);
