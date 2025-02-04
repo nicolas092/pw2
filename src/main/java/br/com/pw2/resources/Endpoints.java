@@ -1,4 +1,4 @@
-package br.com.pw2.controllersResources;
+package br.com.pw2.resources;
 
 import br.com.pw2.WaAutomateNodejs;
 import br.com.pw2.entities.AdvertisingEntity;
@@ -8,6 +8,7 @@ import br.com.pw2.entities.ContactEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
@@ -211,6 +212,7 @@ public class Endpoints implements HealthCheck {
     @Path("/getAllChatIds")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @CacheResult(cacheName = "chatIdsCache")
     public String getAllChatIds() {
         return waAutomateNodejs.getAllChatIds();
     }

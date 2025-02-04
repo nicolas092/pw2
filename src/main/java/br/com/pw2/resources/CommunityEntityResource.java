@@ -1,4 +1,4 @@
-package br.com.pw2.controllersResources;
+package br.com.pw2.resources;
 
 import br.com.pw2.entities.CommunityEntity;
 import br.com.pw2.entities.ContactEntity;
