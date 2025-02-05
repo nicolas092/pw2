@@ -1,0 +1,32 @@
+# Configuração do Prometheus
+global:
+  scrape_interval: 15s  # Coletar métricas a cada 15 segundos
+  evaluation_interval: 15s  # Avaliar regras a cada 15 segundos
+
+# Configuração do Alertmanager (desativado por enquanto)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # Para ativar, adicionar: ["alertmanager:9093"]
+
+# Arquivos de regras (comentados por enquanto)
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# Configuração de scraping do Prometheus
+scrape_configs:
+  - job_name: "prometheus"
+
+    # Caminho padrão para métricas do Quarkus
+    metrics_path: "/q/metrics"
+
+    static_configs:
+      - targets: ["host.docker.internal:8080"]  # Para acessar um serviço rodando no host
+
+    # Alternativa para uso em Docker Compose:
+    # - Se o serviço do app estiver definido no `docker-compose.yml`, use o nome do serviço
+    # static_configs:
+    #   - targets: ["meuapp:8080"]
+

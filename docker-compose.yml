@@ -1,4 +1,7 @@
-version: '3.8'
+version: '3.9'
+
+volumes:
+  metrics:
 
 services:
   jaeger:
@@ -23,3 +26,11 @@ services:
     ports:
       - "5432:5432"
 
+  prometheus:
+    image: bitnami/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - metrics:/etc/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
