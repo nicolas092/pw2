@@ -39,7 +39,6 @@ public class AdvertisingEntityResource {
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("id", entity.id);
         responseMap.put("message", entity.message);
-        responseMap.put("reach", entity.reach);
         responseMap.put("zonedDateTime", entity.zonedDateTime.toString());
 
         if (entity.imageData != null) {
