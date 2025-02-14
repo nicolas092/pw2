@@ -28,7 +28,7 @@ dependencies {
     testImplementation 'io.rest-assured:rest-assured'
 }
 
-group 'br.com.superguarapari'
+group 'br.com.pw2'
 version '1.0.0-SNAPSHOT'
 
 java {
