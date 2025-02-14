@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 3c4be7bfdc68e7e20c693f6e4b9241b16a7794bc
 # Compiled class file
 *.class
 
@@ -72,6 +68,3 @@ nb-configuration.xml
 
 
 quarkus.log
->>>>>>> e59719b (subindo o projeto)
-=======
->>>>>>> 3c4be7bfdc68e7e20c693f6e4b9241b16a7794bc
