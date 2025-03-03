@@ -11,3 +11,4 @@ cat db_dump.sql | podman exec -i postgres_local psql -U nicolas -d local
 para se conectar ao banco por psql
 
 PGPASSWORD="mypassword" psql -h localhost -p 5432 -U nicolas -d postgres
+psql -U arrumaai -d hibernate_db -h 127.0.0.1 -p 5432 -f backup_1.sql
