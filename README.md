@@ -7,6 +7,7 @@ docker exec -t postgres_local pg_dump -U nicolas -d local -F p > db_dump.sql
 para restaurar arquivo de dump do banco:
 
 cat db_dump.sql | podman exec -i postgres_local psql -U nicolas -d local
+podman exec -i postgres_local psql -U nicolas -d terminaldeconsulta -f /path/to/db_dump_tc.sql
 
 para se conectar ao banco por psql
 
